@@ -1,32 +1,49 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import Title from './src/components/Title';
-import Form from './src/components/Form';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from './src/screens/HomeScreen';
-import DetailsScreen from './src/screens/DetailsScreen';
-
-const Stack = createNativeStackNavigator();
+import React, { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from 'react-native-web';
+import socket  from './socket';
 
 export default function App() {
+
+  const [room, setRoom] = useState('default');
+  const [message, setMessage] = useState('');
+  const [receivedMessage, setReceivedMessage] = useState('');
+
+  const sendMessage = () => {
+    socket.emit('send_message', {room, message});
+    setMessage('');
+  };
+
+  useEffect(() => {
+    socket.emit('join_room', room);
+
+    socket.on('receive_message',(msg)=>{
+      setReceivedMessage(msg)
+    })
+
+    return () =>{
+      socket.off('receive_message')
+    }
+  },[room])
+
   return (
-    // <NavigationContainer>
-    //   <Stack.Navigator>
-    //     <Stack.Screen
-    //       name='Home'
-    //       component={HomeScreen}
-    //     />
-    //     <Stack.Screen
-    //       name='Detalhes'
-    //       component={DetailsScreen}
-    //     />
-    //   </Stack.Navigator>
-    // </NavigationContainer>
 
     <View style={styles.container}>
-      <Title/>
-      <Form/>
+     <Text>Canal:{room}</Text>
+
+     <TextInput
+     placeholder='Digite sua mensagem'
+     value={message}
+     onChangeText={setMessage}
+     />
+
+     <Pressable onPress={sendMessage}>
+      <Text>Enviar mensagem</Text>
+     </Pressable>
+
+     <Text>mensagem recebida:</Text>
+     <Text>{receivedMessage || 'Nenhuma mensagem recebida'}</Text>
+
     </View>
   );
 }
@@ -34,7 +51,5 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#e0e5e5',
-    paddingTop:80
   },
 });
